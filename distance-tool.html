@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.74/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.74/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style >
+    	#draw-btn{color:Blue;
+    			background-color: black;
+    		  width:50px;
+    		   height:50px}
+    </style>
+</head>
+<body>
+	<div id="cesiumContainer">
+    </div>
+    <input type="BUTTON" id="draw-btn" value="Draw"/>
+    <script>
+    	Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4YTYxMWM2ZS0yNDQ1LTRhMjctYmIzYy0wMjUwNzlkNjc4NzEiLCJpZCI6MzY3NDAsImlhdCI6MTYwNDE0MzY3MX0.JD9h5flcU2utdCRmAE5N2QJXFWSxmqHphyRiRcA4YVI';
+        let viewer = new Cesium.Viewer("cesiumContainer", {
+            selectionIndicator: false,
+            infoBox: false,
+            terrainProvider: Cesium.createWorldTerrain(),
+        });
+        if (!viewer.scene.pickPositionSupported) {
+            window.alert("This browser does not support pickPosition.");
+        }
+        if (!viewer.scene.pickPositionSupported) {
+            window.alert("This browser does not support pickPosition.");
+        }
+
+        viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(
+            Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK
+        );
+
+        var handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+        function disableCameraMotion(state, viewer) {
+            viewer.scene.screenSpaceCameraController.enableRotate = state;
+            viewer.scene.screenSpaceCameraController.enableZoom = state;
+            viewer.scene.screenSpaceCameraController.enableLook = state;
+            viewer.scene.screenSpaceCameraController.enableTilt = state;
+            viewer.scene.screenSpaceCameraController.enableTranslate = state;
+        }
+        var handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+        function disableCameraMotion(state, viewer) {
+            viewer.scene.screenSpaceCameraController.enableRotate = state;
+            viewer.scene.screenSpaceCameraController.enableZoom = state;
+            viewer.scene.screenSpaceCameraController.enableLook = state;
+            viewer.scene.screenSpaceCameraController.enableTilt = state;
+            viewer.scene.screenSpaceCameraController.enableTranslate = state;
+        }
+        var activeShapePoints = [];
+        var lastend_point;
+        let activeShape;
+        let floatingPoint;
+        let picked = false;
+        //var final;
+        let waypointPosition;
+        var x=false;
+        let = st_p = [];
+        let end_p = [];
+        var pass;
+        var lat;
+        var lon;
+        let midpoint;
+        var temp_floating;
+        var temp_active;
+        let midpoint_todraw;
+        var options = [
+        {
+        	text: "Connectiing Points",
+            onselect: function () {
+            if (!Cesium.Entity.supportsPolylinesOnTerrain(viewer.scene)) 
+            {
+                window.alert("This browser does not support polylines on terrain");
+            }
+			 terminateShape();
+             drawingMode = "polyline";
+                },
+            },
+        ];
+        console.log(x);
+        var input = document.getElementsByTagName("BODY")[0];
+    	input.addEventListener("keyup", function(event) 
+    	{
+        	event.preventDefault();
+        	if (event.keyCode === 13) 
+        	{
+            	console.log("You r Gonna be stopped!!");
+            	x=false;
+            	//return x;
+            	console.log(x);
+            	terminateShape();
+        	}
+    	});
+    
+  		document.getElementById('draw-btn').addEventListener("click", do_draw); 
+  		function do_draw() 
+  		{
+  			 x=true;
+  		 	floatingPoint = temp_floating;
+  		 	activeShape = temp_active;
+  		 	viewer.entities.add(floatingPoint);
+            viewer.entities.add(activeShape);
+  		}
+					
+        handler.setInputAction(function (event) 
+        {
+        	if(x==false)
+        		{
+        			return;
+        		}
+            var earthPosition = viewer.scene.pickPosition(event.position);
+
+            // `earthPosition` will be undefined if our mouse is not over the globe.
+
+            if (Cesium.defined(earthPosition)) 
+            {
+                if (activeShapePoints.length === 0)
+                 {
+                    floatingPoint = createPoint(earthPosition);
+                    activeShapePoints.push(earthPosition);
+                    var dynamicPositions = new Cesium.CallbackProperty(function ()
+                     {
+                        return activeShapePoints;
+                    }, false);
+                    //console.log(typeof(dynamicPositions));
+                    activeShape = drawShape(dynamicPositions);
+                }
+                activeShapePoints.push(earthPosition);
+                createPoint(earthPosition);
+                if (lastend_point == null) 
+                {
+                    lastend_point = earthPosition;
+                }
+                if (activeShapePoints.length > 2) 
+                {
+                    //console.log(lastend_point,earthPosition);
+
+                    let distanceBetween_points = calcdistance(lastend_point, earthPosition);
+                    console.log("Distance", distanceBetween_points);
+
+
+                    viewer.entities.add({
+
+                        position: midpoint_todraw,
+                        label: {
+                            text: distanceBetween_points + " km",
+                            font: "14px sans-serif",
+                            fillColor: Cesium.Color.WHITE,
+                            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+                            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
+                        },
+                    });
+                    lastend_point = earthPosition;
+                }
+            }
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+
+        handler.setInputAction(function (event) 
+        {
+            if (Cesium.defined(floatingPoint))
+             {
+                var newPosition = viewer.scene.pickPosition(event.endPosition);
+                if (Cesium.defined(newPosition))
+                 {
+                    floatingPoint.position.setValue(newPosition);
+                    activeShapePoints.pop();
+                    activeShapePoints.push(newPosition);
+                }
+            }
+        }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+        //console.log("Dharma");
+        
+        function createPoint(worldPosition) 
+        {
+            var point = viewer.entities.add({
+                position: worldPosition,
+                point: {
+                    color: Cesium.Color.YELLOW,
+                    //outlineWidth: 3,
+                    pixelSize: 8,
+                    heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                }
+            });
+            return point;
+
+        }
+
+        var drawingMode = "polyline";
+        function drawShape(positionData) 
+        {
+            var shape;
+
+            if (drawingMode === "polyline") 
+            {
+
+                shape = viewer.entities.add({
+                    polyline: {
+                        color: Cesium.Color.YELLOW,
+                        positions: positionData,
+                        clampToGround: true,
+                        outlineColor: Cesium.Color.BLACK,
+                        material: Cesium.Color.YELLOW,
+                        width: 3,
+                    },
+                });
+            }
+        }
+
+
+
+		function terminateShape() 
+		{
+            //activeShapePoints.pop();
+            drawShape(activeShapePoints);
+            viewer.entities.remove(floatingPoint);
+            viewer.entities.remove(activeShape);
+            temp_floating = floatingPoint;
+            temp_active = activeShape;
+            floatingPoint = undefined;
+            activeShape = undefined;
+            //activeShapePoints = [];
+        }
+
+        
+  		function calcdistance(starting_point, ending_point) 
+  		{
+            
+            var EntryPoint = Cesium.Ellipsoid.WGS84.cartesianToCartographic(starting_point);//getting start point
+            var DestinationPoint = Cesium.Ellipsoid.WGS84.cartesianToCartographic(ending_point);//getting end point
+			
+            midpoint = {
+                lat: ((Cesium.Math.toDegrees(EntryPoint.latitude) + Cesium.Math.toDegrees(DestinationPoint.latitude)) / 2),
+                lon: ((Cesium.Math.toDegrees(EntryPoint.longitude) + Cesium.Math.toDegrees(DestinationPoint.longitude)) / 2)
+            };
+            midpoint_todraw = Cesium.Cartesian3.fromDegrees(midpoint.lon, midpoint.lat);
+
+			var radlat1 = Math.PI * EntryPoint.latitude / 180;
+
+            var radlat2 = Math.PI * DestinationPoint.latitude / 180;
+
+            var theta = EntryPoint.longitude - DestinationPoint.longitude;
+
+            var radtheta = Math.PI * theta / 180;
+
+            var distance = Math.sin(radlat1) * Math.sin(radlat2) + Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+
+            distance = Math.acos(distance);
+
+            distance = distance * 180 / Math.PI;
+
+            distance = distance * 60 * 1.1515;
+
+            distance = distance * 1.609344;
+
+            distance = distance.toFixed(2);
+
+            return distance;
+        }
+
+    </script>
+    </div>
+</body>
+
+</html>
